@@ -3,7 +3,7 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, si
 import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCjeNWb9N0Bth818sfSvH-QmXiWxS9gf6Q",
+  apiKey: "random",
   authDomain: "floatgpt-c1d8a.firebaseapp.com",
   projectId: "floatgpt-c1d8a",
   storageBucket: "floatgpt-c1d8a.firebasestorage.app",
