@@ -1,0 +1,95 @@
+{
+  "name": "RazorFlow",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:playground\" \"npm run dev:electron\"",
+    "dev:web": "tsx server.ts",
+    "dev:electron": "wait-on http://localhost:3000 && electron .",
+    "dev:playground": "npm run dev --prefix playground/client",
+    "dev:desktop": "concurrently \"npm run dev:web\" \"npm run dev:electron\"",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "pack:win": "npm run build && electron-builder --win && node scripts/zip-release.js",
+    "pack:mac": "npm run build && electron-builder --mac",
+    "start": "node dist/server.cjs",
+    "preview": "vite preview",
+    "clean": "rm -rf dist server.js",
+    "lint": "tsc --noEmit",
+    "test:razorflow": "tsx test-razorflow.ts"
+  },
+  "dependencies": {
+    "@floating-ui/react": "^0.27.19",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "firebase": "^12.16.0",
+    "idb-keyval": "^6.2.6",
+    "lucide-react": "^0.546.0",
+    "minisearch": "^7.2.0",
+    "motion": "^12.23.24",
+    "pdfjs-dist": "^6.1.200",
+    "perfect-freehand": "^1.2.3",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "ws": "^8.21.1",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.0.4",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3",
+    "wait-on": "^8.0.0"
+  },
+  "build": {
+    "appId": "com.razorflow.app",
+    "productName": "RazorFlow",
+    "npmRebuild": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "docs/logo.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "docs/logo.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "allowScripts": {
+    "electron@33.4.11": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.1": true,
+    "@firebase/util@1.15.1": true,
+    "electron-winstaller@5.4.0": true,
+    "protobufjs@7.6.5": true
+  }
+}

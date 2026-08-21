@@ -1,0 +1,608 @@
+export type TaskStatus = 'Inbox' | 'Planned' | 'Active' | 'In Progress' | 'Completed' | 'Archived';
+export type RiskStatus = 'Identified' | 'Mitigated' | 'Realized';
+
+export type AIProvider = 'google' | 'groq' | 'openai';
+
+export interface AIConfig {
+  selectedProvider: AIProvider;
+  apiKeys: Record<AIProvider, string>;
+  selectedModels: Record<AIProvider, string>;
+  parameters: {
+    temperature: number; // 0.0 to 2.0
+    maxTokens: number;   // 256 to 8192
+    contextWindow: number; // e.g., 10, 20, 50 messages
+  };
+  isPlanMode: boolean;
+  customChatContext: string;
+}
+// ------------------------------
+
+export interface Goal {
+  id: string;
+  title: string;
+  description: string;
+  progress: number; // 0-100
+  deadlineAt?: number;
+  createdAt: number;
+  updatedAt?: number;
+  completedAt?: number;
+  status?: 'Active' | 'Completed' | 'Archived';
+}
+
+export interface Project {
+  id: string;
+  goalId: string;
+  title: string;
+  description: string;
+  progress: number;
+  deadlineAt?: number;
+  createdAt: number;
+  updatedAt?: number;
+  completedAt?: number;
+  status?: 'Active' | 'Completed' | 'Archived';
+}
+
+export interface Task {
+  id: string;
+  projectId: string;
+  title: string;
+  status: TaskStatus;
+  deadlineAt?: number;
+  estimatedEffort?: string;
+  priority?: string;
+  dependencies?: string[];
+  alerted?: boolean;
+  createdAt: number;
+  updatedAt?: number;
+  completedAt?: number;
+  recovered?: boolean;
+  deferred?: boolean;
+  split?: boolean;
+  carriedOver?: boolean;
+}
+
+export interface Risk {
+  id: string;
+  relatedId?: string; // e.g., projectId or taskId
+  title: string;
+  description: string;
+  status: RiskStatus;
+  createdAt: number;
+}
+
+export interface Resource {
+  id: string;
+  relatedId?: string;
+  title: string;
+  url?: string;
+  type: string;
+  createdAt: number;
+}
+
+export interface CompletionHistory {
+  id: string;
+  entityId: string; // taskId or projectId
+  entityType: 'Goal' | 'Task' | 'Project' | 'task' | 'project';
+  title?: string;
+  completedAt: number;
+  notes?: string;
+  archived?: boolean;
+}
+
+export interface Attachment {
+  name: string;
+  mimeType: string;
+  data: string; // base64
+}
+
+export interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+  attachments?: Attachment[];
+  usedWebSearch?: boolean;
+}
+
+export interface HabitProfile {
+  focusWindow: string;
+  delayRisk: string;
+  preferredSession: string;
+  activeHours: string;
+}
+
+export interface ExecutionProfile {
+  averageCompletionTimeMinutes: number;
+  planningAccuracyPercent: number;
+  completionRatePercent: number;
+  averageDelayMinutes: number;
+  preferredWorkingHours: 'Morning' | 'Afternoon' | 'Evening' | 'Night' | 'Unknown';
+  preferredTaskSequence: string[];
+  frequentlyDelayedCategories: string[];
+  averageFocusDurationMinutes: number;
+  mostProductiveWeekday: string;
+  
+  // Internal counters for rolling averages
+  _completedTasksCount: number;
+  _totalCreatedTasksCount: number;
+  _totalDelayMinutes: number;
+  _planningAccuracySum: number;
+  _planningAccuracyCount: number;
+  _totalFocusDurationMinutes: number;
+  _focusSessionsCount: number;
+  _completedByTimeOfDay: Record<string, number>;
+  _completedByWeekday: Record<string, number>;
+  _categoryDelays: Record<string, number>;
+  _recentCompletedTypes: string[];
+  _currentFocusStartTime?: number;
+}
+
+export interface Recommendation {
+  id: string;
+  message: string;
+  type: 'coaching' | 'warning' | 'suggestion';
+  createdAt: number;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  isRead: boolean;
+  createdAt: number;
+  actionUrl?: string;
+}
+
+export interface KnowledgeChunk {
+  id: string;
+  sourceId: string;
+  text: string;
+  pageNumber?: number;
+  score?: number; // Retrieval score
+}
+
+export interface KnowledgeSource {
+  id: string;
+  filename: string;
+  type: 'pdf' | 'image' | 'audio' | 'text';
+  status: 'processing' | 'ready' | 'error';
+  content: string; // Extracted text
+  chunks?: KnowledgeChunk[]; // Split text
+  mimeType: string;
+  createdAt: number;
+  sizeBytes: number;
+  metadata?: any;
+}
+
+export interface MetricsState {
+  queriesToday: number;
+  completedTasksToday: number;
+  createdTasksToday: number;
+  momentumScore: number; // 0-100 derived pulse
+  lastCalculatedAt: number;
+}
+
+export interface UIState {
+  isRightPanelOpen: boolean;
+}
+
+export interface FocusModeState {
+  active: boolean;
+  coachingMessage?: string;
+  topTaskIds?: string[];
+}
+
+export interface Settings {
+  theme: 'dark' | 'light' | 'cream' | 'mocha' | 'peach' | 'pistachio' | 'midnight';
+  appearance: {
+    accentColor: string;
+    iconStyle: 'solid' | 'outline';
+    panelDensity: 'comfortable' | 'compact' | 'dense' | 'micro';
+    orbScale: number;
+    orbOpacity: number;
+    orbShape: 'circle' | 'squircle';
+    orbGlow: 'none' | 'subtle' | 'intense';
+  };
+  system: {
+    launchOnStartup: boolean;
+    alwaysOnTop: boolean;
+    globalHotkey: string;
+  };
+  merchantProfile?: {
+    businessName: string;
+    merchantId: string;
+    currency: string;
+    environment: 'test' | 'live';
+    keyId: string;
+    keySecret: string;
+    webhookSecret: string;
+  };
+  fintechFeatures?: {
+    revenueLeakageScan: boolean;
+    gatewayHealthTracking: boolean;
+    smartRecoveryLinks: boolean;
+    disputeDefenseAutoDraft: boolean;
+    settlementAuditor: boolean;
+    piiMasking: boolean;
+    autoRefundThresholdINR: number;
+    policyRiskThreshold: 'low' | 'medium' | 'high' | 'strict';
+  };
+  features: {
+    autoPlanSync: boolean;
+    habitMemory: boolean;
+    personalizedRecommendations: boolean;
+    focusModeEnabled: boolean;
+    soundAlerts: boolean;
+    experimentalFeatures: boolean;
+  };
+  productivity: {
+    focusBlocklist: string[];
+    pomodoroWorkMins: number;
+    pomodoroBreakMins: number;
+    pulseSensitivity: 'High' | 'Normal' | 'Low' | 'Muted';
+  };
+  accessibility: {
+    reducedMotion: boolean;
+    largerTextMode: boolean;
+    highContrastMode: boolean;
+  };
+  privacy: {
+    autoBackupDays: number;
+    encryptionEnabled: boolean;
+  };
+  sync: {
+    mirrorOrbAlerts: boolean;
+    enableMultimodal: boolean;
+  };
+  aiConfig: AIConfig & {
+    systemPersona?: string;
+    memoryHorizonDays?: number;
+    temperature?: number;
+  };
+  desktopAgent: {
+    enabled: boolean;
+    autoStart: boolean;
+    startMinimized: boolean;
+    voiceMode: 'off' | 'wake_word' | 'push_to_talk';
+    wakeWord: string;
+    micSensitivity: number;
+    voiceLanguage: string;
+    aiProvider: 'local' | 'cloud' | 'auto';
+    cloudFallback: boolean;
+    orbAutoShow: boolean;
+    showStatusIndicator: boolean;
+    permittedActions: string[];
+  };
+}
+
+export interface DailySession {
+  id: string; // date string like '2026-06-24'
+  date: number;
+  goals: Goal[];
+  projects: Project[];
+  tasks: Task[];
+  risks: Risk[];
+  messages: Message[];
+  playgroundMessages: Message[];
+  recommendations: Recommendation[];
+  history?: CompletionHistory[];
+}
+
+export interface RecoveryState {
+  status: 'Healthy' | 'Slight Drift' | 'Moderate Delay' | 'Critical Delay' | 'Mission Failure';
+  estimatedRecoveryHours: number;
+  tasksDeferredCount: number;
+  missionConfidencePercent: number;
+  isRecovering: boolean;
+  lastRecoveredAt?: number;
+}
+
+export * from './types/razorflow';
+import type { 
+  RazorFlowUserRole, 
+  RazorpayEnvironment, 
+  PendingApproval, 
+  ActionLedgerEntry, 
+  InvestigationReport, 
+  AgentRunTrace, 
+  RazorpayOperationalState, 
+  EngineeringOperationalState 
+} from './types/razorflow';
+
+export interface AppState {
+  sessionId: string;
+  sessionDate: number;
+  viewingSessionId?: string | null;
+  goals: Goal[];
+  projects: Project[];
+  tasks: Task[];
+  risks: Risk[];
+  resources: Resource[];
+  history: CompletionHistory[];
+  messages: Message[];
+  playgroundMessages: Message[];
+  focusMode: boolean; // Deprecated, use focusModeState
+  focusModeState: FocusModeState;
+  habitProfile: HabitProfile;
+  executionProfile: ExecutionProfile;
+  recommendations: Recommendation[];
+  notifications: AppNotification[];
+  knowledge: KnowledgeSource[];
+  metrics: MetricsState;
+  uiState: UIState;
+  recoveryState: RecoveryState;
+  settings: Settings;
+  pastSessions: DailySession[];
+
+  // ─── RazorFlow Agentic Work Layer State ───────────────────────
+  userRole?: RazorFlowUserRole;
+  razorpayEnvironment?: RazorpayEnvironment;
+  activeInvestigation?: InvestigationReport | null;
+  pendingApprovals?: PendingApproval[];
+  actionLedger?: ActionLedgerEntry[];
+  agentRuns?: AgentRunTrace[];
+  businessState?: RazorpayOperationalState;
+  engineeringState?: EngineeringOperationalState;
+}
+
+export const INITIAL_SETTINGS: Settings = {
+  theme: 'dark',
+  appearance: {
+    accentColor: 'indigo',
+    iconStyle: 'outline',
+    panelDensity: 'comfortable',
+    orbScale: 1.0,
+    orbOpacity: 1.0,
+    orbShape: 'circle',
+    orbGlow: 'subtle',
+  },
+  system: {
+    launchOnStartup: false,
+    alwaysOnTop: false,
+    globalHotkey: 'CommandOrControl+Alt+R',
+  },
+  merchantProfile: {
+    businessName: 'RazorFlow Merchant Hub',
+    merchantId: 'mid_rzp_prod_8829',
+    currency: 'INR',
+    environment: 'test',
+    keyId: 'rzp_test_flow99824',
+    keySecret: 'sec_live_998124819',
+    webhookSecret: 'whsec_rzp_audit_2026',
+  },
+  fintechFeatures: {
+    revenueLeakageScan: true,
+    gatewayHealthTracking: true,
+    smartRecoveryLinks: true,
+    disputeDefenseAutoDraft: true,
+    settlementAuditor: true,
+    piiMasking: true,
+    autoRefundThresholdINR: 5000,
+    policyRiskThreshold: 'medium',
+  },
+  features: {
+    autoPlanSync: true,
+    habitMemory: true,
+    personalizedRecommendations: true,
+    focusModeEnabled: true,
+    soundAlerts: true,
+    experimentalFeatures: false,
+  },
+  productivity: {
+    focusBlocklist: ['reddit.com', 'twitter.com', 'youtube.com', 'facebook.com'],
+    pomodoroWorkMins: 25,
+    pomodoroBreakMins: 5,
+    pulseSensitivity: 'Normal',
+  },
+  accessibility: {
+    reducedMotion: false,
+    largerTextMode: false,
+    highContrastMode: false,
+  },
+  privacy: {
+    autoBackupDays: 0,
+    encryptionEnabled: false,
+  },
+  sync: {
+    mirrorOrbAlerts: true,
+    enableMultimodal: true,
+  },
+  aiConfig: {
+    selectedProvider: 'groq',
+    apiKeys: {
+      google: '',
+      groq: '',
+      openai: '',
+    },
+    selectedModels: {
+      google: 'gemini-1.5-pro',
+      groq: 'openai/gpt-oss-120b',
+      openai: 'gpt-4o',
+    },
+    parameters: {
+      temperature: 0.7,
+      maxTokens: 2048,
+      contextWindow: 20
+    },
+    isPlanMode: true,
+    customChatContext: '',
+    systemPersona: 'You are RazorFlow, a persistent context-aware agentic work layer for Razorpay. You understand intent, aggregate context across payment systems and engineering telemetry, reason with evidence, and execute safe bounded actions with auditable verification.',
+    memoryHorizonDays: 7,
+    temperature: 0.7,
+  },
+  desktopAgent: {
+    enabled: false,
+    autoStart: false,
+    startMinimized: false,
+    voiceMode: 'off' as const,
+    wakeWord: 'hey flow',
+    micSensitivity: 0.5,
+    voiceLanguage: 'en',
+    aiProvider: 'auto' as const,
+    cloudFallback: true,
+    orbAutoShow: true,
+    showStatusIndicator: true,
+    permittedActions: ['open_url', 'search_web', 'show_razorflow', 'hide_razorflow', 'toggle_razorflow'],
+  },
+};
+
+export const INITIAL_EXECUTION_PROFILE: ExecutionProfile = {
+  averageCompletionTimeMinutes: 0,
+  planningAccuracyPercent: 100,
+  completionRatePercent: 100,
+  averageDelayMinutes: 0,
+  preferredWorkingHours: 'Unknown',
+  preferredTaskSequence: [],
+  frequentlyDelayedCategories: [],
+  averageFocusDurationMinutes: 0,
+  mostProductiveWeekday: 'Unknown',
+  
+  _completedTasksCount: 0,
+  _totalCreatedTasksCount: 0,
+  _totalDelayMinutes: 0,
+  _planningAccuracySum: 0,
+  _planningAccuracyCount: 0,
+  _totalFocusDurationMinutes: 0,
+  _focusSessionsCount: 0,
+  _completedByTimeOfDay: { Morning: 0, Afternoon: 0, Evening: 0, Night: 0 },
+  _completedByWeekday: { Sunday: 0, Monday: 0, Tuesday: 0, Wednesday: 0, Thursday: 0, Friday: 0, Saturday: 0 },
+  _categoryDelays: {},
+  _recentCompletedTypes: [],
+};
+
+export const INITIAL_RECOVERY_STATE: RecoveryState = {
+  status: 'Healthy',
+  estimatedRecoveryHours: 0,
+  tasksDeferredCount: 0,
+  missionConfidencePercent: 100,
+  isRecovering: false,
+};
+
+export const INITIAL_STATE: AppState = {
+  sessionId: new Date().toISOString().split('T')[0],
+  sessionDate: Date.now(),
+  viewingSessionId: null,
+  goals: [],
+  projects: [],
+  tasks: [],
+  risks: [],
+  resources: [],
+  history: [],
+  messages: [],
+  playgroundMessages: [],
+  focusMode: false,
+  focusModeState: { active: false },
+  habitProfile: {
+    focusWindow: 'Unknown',
+    delayRisk: 'Unknown',
+    preferredSession: 'Unknown',
+    activeHours: 'Unknown'
+  },
+  executionProfile: INITIAL_EXECUTION_PROFILE,
+  recommendations: [],
+  notifications: [],
+  knowledge: [],
+  metrics: {
+    queriesToday: 0,
+    completedTasksToday: 0,
+    createdTasksToday: 0,
+    momentumScore: 50,
+    lastCalculatedAt: Date.now()
+  },
+  uiState: {
+    isRightPanelOpen: false // Closed by default
+  },
+  recoveryState: INITIAL_RECOVERY_STATE,
+  settings: INITIAL_SETTINGS,
+  pastSessions: [],
+
+  // RazorFlow Defaults
+  userRole: 'merchant',
+  razorpayEnvironment: 'test',
+  activeInvestigation: null,
+  pendingApprovals: [],
+  actionLedger: [],
+  agentRuns: [],
+  businessState: {
+    environment: 'test',
+    connected: true,
+    merchantId: 'acc_rzp_test_merchant_881',
+    merchantName: 'RazorFlow Commerce Demo Store',
+    currency: 'INR',
+    todayMetrics: {
+      totalVolumeINR: 2458000,
+      totalTransactions: 1240,
+      successfulTransactions: 1084,
+      failedTransactions: 156,
+      successRatePercent: 87.4,
+      activeAnomaliesCount: 1,
+      pendingDisputesCount: 2,
+      pendingSettlementsINR: 1845000,
+      potentialRecoverableINR: 312000,
+    },
+    recentFailureSpike: {
+      detectedAt: Date.now() - 42 * 60 * 1000,
+      primaryErrorCode: 'BAD_REQUEST_ERROR: HDFC_NETBANKING_TIMEOUT',
+      affectedGateway: 'HDFC Bank Netbanking Gateway',
+      failureRateIncreasePercent: 14.2,
+    }
+  },
+  engineeringState: {
+    activeServices: ['api-gateway', 'payment-orchestrator', 'webhook-dispatcher', 'settlement-engine'],
+    latestDeployment: {
+      id: 'dep_prod_9921',
+      service: 'payment-orchestrator',
+      commitHash: '7b28a91',
+      author: 'infra-deploy-bot',
+      deployedAt: Date.now() - 53 * 60 * 1000,
+      versionTag: 'v2.4.1-rc3',
+      changelogSummary: 'Upgraded HDFC Netbanking connector timeout threshold from 45s to 15s'
+    },
+    recentIncidents: [
+      {
+        id: 'inc_rzp_801',
+        title: 'HDFC Netbanking Elevated Gateway Timeouts (Aggressive 15s timeout)',
+        severity: 'sev2',
+        status: 'investigating',
+        matchedGateway: 'HDFC Bank Netbanking Gateway',
+        createdAt: Date.now() - 35 * 60 * 1000,
+      }
+    ]
+  }
+};
+
+// --- Shared Memory Architecture Types ---
+
+export interface MemorySummary {
+  id: string;
+  topic: string;
+  summary: string;
+  timestamp: number;
+  source: 'orb' | 'playground' | 'system';
+}
+
+export interface WorkspaceMemory {
+  activeGoals: Goal[];
+  activeProjects: Project[];
+  tasks: Task[];
+  recentSummaries: MemorySummary[];
+  importantDecisions: string[];
+  currentFocus?: string;
+  habitSignals: any[]; // Or use HabitProfile
+  executionStatus: string;
+}
+
+export interface SurfaceTranscript {
+  orbTranscript: Message[];
+  playgroundTranscript: Message[];
+}
+
+export interface JournalEvent {
+  id: string;
+  type: 'message' | 'task_completed' | 'plan_created' | 'habit_update' | 'summary_generated';
+  source: 'orb' | 'playground' | 'system';
+  payload: any;
+  timestamp: number;
+}
+
