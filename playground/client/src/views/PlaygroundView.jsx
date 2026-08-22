@@ -56,7 +56,7 @@ export const PlaygroundView = ({
       <div className="absolute top-4 right-8 z-50">
         <button 
           onClick={startNewSession}
-          className="flex items-center gap-2 px-4 py-2 bg-panel border border-white/10 hover:border-accent hover:bg-accent/10 rounded-lg text-xs font-mono font-bold text-white transition-all shadow-lg"
+          className="flex items-center gap-2 px-4 py-2 bg-panel border border-card-border hover:border-accent hover:bg-accent/10 rounded-lg text-xs font-mono font-bold text-text-primary transition-all shadow-md cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5 text-accent" />
           NEW CHAT
@@ -73,7 +73,7 @@ export const PlaygroundView = ({
           {(activeMessages).map((msg, idx) => (
             msg.role === 'user' ? (
               <div key={idx} className="flex justify-end">
-                 <div className="bg-white/10 border border-white/5 px-5 py-3 rounded-2xl text-[14px] leading-[1.6] max-w-[85%] text-white font-normal backdrop-blur-sm shadow-md">
+                 <div className="bg-[#0C83FD] text-white px-5 py-3 rounded-2xl text-[14px] leading-[1.6] max-w-[85%] font-normal shadow-md">
                     <MarkdownRenderer content={msg.content} />
                  </div>
               </div>

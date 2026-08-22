@@ -89,8 +89,13 @@ export function createOpenAICompatibleProvider(endpoint: string, providerLabel: 
       };
     }
 
-    const text = messageObj?.content;
+    let text = messageObj?.content;
     if (!text) throw new Error(`No text returned from ${providerLabel} API`);
+
+    // Clean reasoning think blocks if present from models like Qwen/DeepSeek
+    if (typeof text === 'string' && text.includes('<think>')) {
+      text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    }
 
     if (isPlanMode) {
       return parseStructuredResponse(text, providerLabel);

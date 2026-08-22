@@ -19,6 +19,14 @@ import { toolExecutor } from '../../agent/executor/toolExecutor';
 import { verificationEngine } from '../../agent/verifier/verificationEngine';
 import { actionLedger } from '../../agent/ledger/actionLedger';
 import { memoryArchitecture } from '../../agent/memory/memoryArchitecture';
+import { WhatChangedEngine } from '../../agent/temporal/comparator';
+import { ContextPacketGenerator } from '../../agent/handoff/packet';
+import { watcherEngine } from '../../agent/monitor/watcher';
+import { DecisionReplayEngine } from '../../agent/replay/explainer';
+import { investigationStore } from '../../agent/investigation/resumable';
+import { flowGraphEngine } from '../../agent/graph/flowGraphEngine';
+import { ChartSpecEngine } from '../../agent/charts/chartSpecEngine';
+import { orbIntelligenceEngine } from '../../agent/orb/orbIntelligenceEngine';
 
 export * from './BusinessHealthAgent';
 export * from './PaymentInvestigationAgent';
@@ -72,10 +80,25 @@ export class AgentOrchestrator {
 
     const agentStart = Date.now();
     switch (intent.type) {
-      case 'business_health_query':
-        selectedAgentName = 'BusinessHealthAgent';
-        reasoning = await businessHealthAgent.execute(context);
+      case 'business_health_query': {
+        const q = (intent.rawQuery || '').toLowerCase();
+        if (q.includes('what payment') || q.includes('how many') || q.includes('today\'s revenue') || q.includes('refund') || q.includes('average') || q.includes('customer') || q.includes('worst') || q.includes('which gateway') || q.includes('done today') || q.includes('happened today')) {
+          selectedAgentName = 'OrbIntelligenceEngine';
+          const orbRes = await orbIntelligenceEngine.processQuery(intent.rawQuery, context.userRole);
+          reasoning = {
+            conclusion: orbRes.answerText,
+            confidence: orbRes.confidence,
+            evidence: [orbRes.spokenText],
+            sources: orbRes.sources,
+            timestamp: new Date().toISOString(),
+            recommendedActions: []
+          };
+        } else {
+          selectedAgentName = 'BusinessHealthAgent';
+          reasoning = await businessHealthAgent.execute(context);
+        }
         break;
+      }
 
       case 'payment_investigation':
         selectedAgentName = 'PaymentInvestigationAgent';
@@ -113,6 +136,147 @@ export class AgentOrchestrator {
         selectedAgentName = 'EngineeringAgent';
         reasoning = await engineeringAgent.execute(context);
         break;
+
+      case 'flowgraph_query': {
+        selectedAgentName = 'FlowGraphVisualizer';
+        const graph = flowGraphEngine.buildGraphForQuery(intent.rawQuery);
+        reasoning = {
+          conclusion: `### 🌐 FlowGraph: Context & Investigation Topology\n\n**Topology**: \`${graph.title}\`\n\n- **Nodes**: ${graph.nodes.length} entities (${graph.nodes.filter(n => n.changed).length} changed in active window)\n- **Edges**: ${graph.edges.length} relationships\n- **Root Correlation**: Commit \`dep_prod_9921\` ➔ HDFC Netbanking failure spike ➔ ₹3.12L recoverable GMV\n\n*Interactive FlowGraph visual rendered below. Drag nodes, toggle 2D/3D, view impact, or export.*`,
+          confidence: 0.98,
+          evidence: ['Synthesized from Context Graph and Investigation DAG'],
+          sources: [{ id: 'src_graph', type: 'metric_timeseries', title: 'FlowGraphEngine', timestamp: Date.now() }],
+          timestamp: new Date().toISOString(),
+          recommendedActions: []
+        };
+        break;
+      }
+
+      case 'impact_analysis_query': {
+        selectedAgentName = 'FlowGraphImpactEngine';
+        const impact = flowGraphEngine.calculateImpact('gw_hdfc_netbanking');
+        reasoning = {
+          conclusion: `### 🎯 Downstream & Upstream Impact Analysis\n\n**Target**: \`${impact.targetLabel}\`\n\n- **At-Risk Revenue**: \`₹${(impact.atRiskRevenueINR / 100000).toFixed(2)} Lakhs\`\n- **Affected Customers**: \`${impact.affectedCustomersCount} dropped checkouts\` [DEMO FIXTURE]\n- **Affected Payment Rails**: ${impact.affectedPaymentMethods.join(', ')}\n- **Affected Services**: ${impact.affectedServices.join(', ')}\n\n**Evidence Trace**:\n${impact.evidenceSummary.map(e => `- ${e}`).join('\n')}`,
+          confidence: impact.confidence,
+          evidence: impact.evidenceSummary,
+          sources: [{ id: 'src_impact', type: 'metric_timeseries', title: 'FlowGraphEngine', timestamp: Date.now() }],
+          timestamp: new Date().toISOString(),
+          recommendedActions: []
+        };
+        break;
+      }
+
+      case 'chart_generation_query': {
+        selectedAgentName = 'NaturalLanguageChartGenerator';
+        const spec = ChartSpecEngine.generateSpec(intent.rawQuery);
+        reasoning = {
+          conclusion: `### 📊 ${spec.title}\n\n*${spec.subtitle}*\n\n**Verified Insights**:\n${spec.insights.map(i => `- ${i}`).join('\n')}\n\n*Source: RazorFlow Live Telemetry Engine [TEST / DEMO FIXTURE]*`,
+          confidence: 0.97,
+          evidence: spec.insights,
+          sources: [{ id: 'src_chart', type: 'metric_timeseries', title: 'ChartSpecEngine', timestamp: Date.now() }],
+          timestamp: new Date().toISOString(),
+          recommendedActions: []
+        };
+        break;
+      }
+
+      case 'timeline_query': {
+        selectedAgentName = 'FlowGraphTimelineScrubber';
+        reasoning = {
+          conclusion: `### ⏪ FlowGraph Timeline Scrubber Active\n\n- **Baseline Period**: Pre-deployment state (All rails healthy, 98.1% success rate average)\n- **Active Period**: Post-commit \`dep_prod_9921\` (HDFC Netbanking 73.1% anomaly surge)\n\n*Use the interactive timeline scrubber above the FlowGraph canvas to toggle historical operational states.*`,
+          confidence: 0.98,
+          evidence: ['Baseline vs Current telemetry alignment'],
+          sources: [{ id: 'src_timeline', type: 'metric_timeseries', title: 'FlowGraphEngine', timestamp: Date.now() }],
+          timestamp: new Date().toISOString(),
+          recommendedActions: []
+        };
+        break;
+      }
+
+      case 'what_changed_query': {
+        selectedAgentName = 'WhatChangedComparator';
+        const diff = WhatChangedEngine.compareWindows();
+        reasoning = {
+          conclusion: `### ⏱️ Temporal Analysis: What Changed?\n\n**Top Finding**: ${diff.topFinding}\n\n**Summary**: ${diff.summary}\n\n| Dimension | Baseline | Current | Delta | Severity |\n| :--- | :--- | :--- | :--- | :--- |\n${diff.changes.map(c => `| ${c.dimension} | ${c.baselineValue} | ${c.currentValue} | \`${c.delta}\` | **${c.severity}** |`).join('\n')}\n\n*Confidence*: \`${Math.round(diff.overallConfidence * 100)}%\` across ${diff.changes.length} monitored dimensions.`,
+          confidence: diff.overallConfidence,
+          evidence: diff.changes.map(c => c.evidence),
+          sources: [{ id: 'src_diff', type: 'metric_timeseries', title: 'WhatChangedEngine', timestamp: Date.now() }],
+          timestamp: new Date().toISOString(),
+          recommendedActions: []
+        };
+        break;
+      }
+
+      case 'context_packet_request': {
+        selectedAgentName = 'ContextPacketGenerator';
+        const latestInv = investigationStore.getLatest() || investigationStore.resume('payment')!;
+        const packet = ContextPacketGenerator.generateFromInvestigation(latestInv);
+        const md = ContextPacketGenerator.toMarkdown(packet);
+        reasoning = {
+          conclusion: md,
+          confidence: packet.confidence,
+          evidence: packet.evidence,
+          sources: [{ id: 'src_packet', type: 'memory_layer', title: 'ContextPacketGenerator', timestamp: Date.now() }],
+          timestamp: new Date().toISOString(),
+          recommendedActions: []
+        };
+        break;
+      }
+
+      case 'watch_metric_command': {
+        selectedAgentName = 'WatcherEngine';
+        const watcher = watcherEngine.createWatcher({
+          name: 'Payment Success Rate & Latency Watcher',
+          metric: 'payment_success_rate',
+          baseline: '95.2%',
+          threshold: '< 90.0%',
+          windowMinutes: 15,
+          scope: 'Global All Gateways (with HDFC focus)',
+          notificationPolicy: 'IN_APP',
+          actionPolicy: 'SHADOW_INVESTIGATE_ONLY'
+        });
+        reasoning = {
+          conclusion: `### 👁️ Persistent Metric Watcher Active\n\n- **Watcher ID**: \`${watcher.id}\`\n- **Target Metric**: \`${watcher.metric}\`\n- **Threshold Condition**: \`${watcher.threshold}\` (Baseline: \`${watcher.baseline}\`)\n- **Evaluation Window**: \`${watcher.windowMinutes} minutes\`\n- **Action Policy**: \`SHADOW_INVESTIGATE_ONLY\` (Automated investigation triggered on breach; zero unauthorized financial mutations)\n- **Status**: \`ACTIVE\` 🟢`,
+          confidence: 1.0,
+          evidence: ['Watcher registered in persistent monitor registry'],
+          sources: [{ id: 'src_watch', type: 'metric_timeseries', title: 'WatcherEngine', timestamp: Date.now() }],
+          timestamp: new Date().toISOString(),
+          recommendedActions: []
+        };
+        break;
+      }
+
+      case 'decision_replay_query': {
+        selectedAgentName = 'DecisionReplayEngine';
+        const replay = DecisionReplayEngine.explainRecommendation();
+        const formatted = DecisionReplayEngine.formatPlayback(replay);
+        reasoning = {
+          conclusion: formatted,
+          confidence: replay.confidence,
+          evidence: replay.observedFacts,
+          sources: [{ id: 'src_replay', type: 'memory_layer', title: 'DecisionReplayEngine', timestamp: Date.now() }],
+          timestamp: new Date().toISOString(),
+          recommendedActions: []
+        };
+        break;
+      }
+
+      case 'resume_investigation_query': {
+        selectedAgentName = 'InvestigationResumer';
+        const resumed = investigationStore.resume(intent.rawQuery);
+        if (resumed) {
+          reasoning = {
+            conclusion: `### 🔄 Resumed Investigation: ${resumed.title}\n\n- **Status**: \`${resumed.status}\` (Last updated: ${new Date(resumed.updatedAt).toLocaleTimeString()})\n- **Core Question**: "${resumed.question}"\n\n**Current Hypotheses**:\n${resumed.hypotheses.map(h => `- ${h}`).join('\n')}\n\n**Key Evidence**:\n${resumed.evidence.map(e => `- ${e}`).join('\n')}\n\n**Next Outstanding Work**:\n${resumed.outstandingWork.map(w => `- ${w}`).join('\n')}`,
+            confidence: 0.98,
+            evidence: resumed.evidence,
+            sources: [{ id: 'src_inv_store', type: 'memory_layer', title: 'ResumableInvestigationStore', timestamp: Date.now() }],
+            timestamp: new Date().toISOString(),
+            recommendedActions: []
+          };
+        } else {
+          reasoning = await paymentInvestigationAgent.execute(context).then(r => r.reasoning);
+        }
+        break;
+      }
 
       case 'action_ledger_query':
         selectedAgentName = 'ActionLedgerViewer';

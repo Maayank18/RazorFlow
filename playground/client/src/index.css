@@ -16,95 +16,112 @@
   --color-accent-bg: var(--theme-accent-bg);
 }
 
-/* Base Light Theme */
-:root {
-  --theme-bg: #f8f9fa; /* Light Google style background */
-  --theme-bg-secondary: #ffffff; /* Panels */
-  --theme-panel: #ffffff;
-  --theme-panel-hover: #f1f3f4;
-  --theme-card: #ffffff;
-  --theme-card-border: #dadce0;
-  --theme-text-primary: #202124;
-  --theme-text-secondary: #5f6368;
-  --theme-text-muted: #80868b;
-  --theme-icon: #5f6368;
-  --theme-accent: #1a73e8; /* Blue accent */
-  --theme-accent-hover: #174ea6;
-  --theme-accent-bg: #e8f0fe;
+/* Base Dark Theme (Default) */
+:root, .dark {
+  --theme-bg: #0A0E17;
+  --theme-bg-secondary: #0F1523;
+  --theme-panel: #0F1523;
+  --theme-panel-hover: #161E31;
+  --theme-card: #141B2D;
+  --theme-card-border: #1E293B;
+  --theme-text-primary: #F8FAFC;
+  --theme-text-secondary: #94A3B8;
+  --theme-text-muted: #64748B;
+  --theme-icon: #94A3B8;
+  --theme-accent: #0C83FD; 
+  --theme-accent-hover: #38BDF8;
+  --theme-accent-bg: rgba(12, 131, 253, 0.15);
 }
 
-/* Dark Theme */
-.dark {
-  --theme-bg: #131314;
-  --theme-bg-secondary: #1e1f20;
-  --theme-panel: #1e1f20;
-  --theme-panel-hover: #282a2c;
-  --theme-card: #282a2c;
-  --theme-card-border: #444746;
-  --theme-text-primary: #e3e3e3;
-  --theme-text-secondary: #c4c7c5;
-  --theme-text-muted: #8e918f;
-  --theme-icon: #c4c7c5;
-  --theme-accent: #a8c7fa; 
-  --theme-accent-hover: #d3e3fd;
-  --theme-accent-bg: #004a77;
+/* Crisp Bright / Light Mode */
+.light {
+  --theme-bg: #F1F5F9;
+  --theme-bg-secondary: #FFFFFF;
+  --theme-panel: #FFFFFF;
+  --theme-panel-hover: #F8FAFC;
+  --theme-card: #FFFFFF;
+  --theme-card-border: #CBD5E1;
+  --theme-text-primary: #0F172A;
+  --theme-text-secondary: #334155;
+  --theme-text-muted: #64748B;
+  --theme-icon: #475569;
+  --theme-accent: #0C83FD;
+  --theme-accent-hover: #0265D2;
+  --theme-accent-bg: #EFF6FF;
+}
+
+/* Warm Cream Mode */
+.cream {
+  --theme-bg: #FDF6E2;
+  --theme-bg-secondary: #F7ECCD;
+  --theme-panel: #FAF0D7;
+  --theme-panel-hover: #F4E4BE;
+  --theme-card: #FAF0D7;
+  --theme-card-border: #E6CD9A;
+  --theme-text-primary: #3B2E18;
+  --theme-text-secondary: #5C4B2E;
+  --theme-text-muted: #8A7550;
+  --theme-icon: #8A7550;
+  --theme-accent: #D97706;
+  --theme-accent-hover: #B45309;
+  --theme-accent-bg: #FEF3C7;
+}
+
+/* Mocha Comfort Mode */
+.mocha {
+  --theme-bg: #1E1715;
+  --theme-bg-secondary: #2A211E;
+  --theme-panel: #2A211E;
+  --theme-panel-hover: #382D29;
+  --theme-card: #322723;
+  --theme-card-border: #4A3B35;
+  --theme-text-primary: #F5EBE6;
+  --theme-text-secondary: #D4C3BC;
+  --theme-text-muted: #9E8B83;
+  --theme-icon: #D4C3BC;
+  --theme-accent: #FB923C;
+  --theme-accent-hover: #F97316;
+  --theme-accent-bg: rgba(251, 146, 60, 0.15);
+}
+
+/* Midnight OLED Mode */
+.midnight {
+  --theme-bg: #030508;
+  --theme-bg-secondary: #070B12;
+  --theme-panel: #070B12;
+  --theme-panel-hover: #0C121E;
+  --theme-card: #0A0F1A;
+  --theme-card-border: #131E33;
+  --theme-text-primary: #FFFFFF;
+  --theme-text-secondary: #94A3B8;
+  --theme-text-muted: #475569;
+  --theme-icon: #94A3B8;
+  --theme-accent: #38BDF8;
+  --theme-accent-hover: #0EA5E9;
+  --theme-accent-bg: rgba(56, 189, 248, 0.15);
 }
 
 body {
   margin: 0;
   background-color: var(--color-bg);
   color: var(--color-text-primary);
-  /* Use Inter but default to standard system sans-serif for ultra crisp look */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   overflow: hidden; 
-  /* Reduce base font size for the zoomed-out crisp look */
   font-size: 13px;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #444746;
+  background: var(--color-card-border);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #8e918f;
-}
-
-/* Range slider styling to match Google AI Studio */
-input[type=range] {
-  -webkit-appearance: none;
-  width: 100%;
-  background: transparent;
-}
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  height: 12px;
-  width: 12px;
-  border-radius: 50%;
-  background: var(--color-text-primary);
-  cursor: pointer;
-  margin-top: -5px;
-  box-shadow: 0 0 0 3px var(--color-panel); 
-}
-input[type=range]::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 2px;
-  cursor: pointer;
-  background: var(--color-card-border);
-  border-radius: 1px;
-}
-
-/* Utility to completely hide scrollbar while allowing scrolling */
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  background: var(--color-text-muted);
 }

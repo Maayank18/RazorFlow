@@ -36,9 +36,10 @@ export async function generateAIResponse(
   const providerId = overrideConfig ? overrideConfig.providerId : (config.selectedProvider || 'groq');
   const validGroqModels = [
     'openai/gpt-oss-120b',
-    'openai/gpt-oss-20b',
     'qwen/qwen3.6-27b',
-    'llama-3.3-70b-versatile'
+    'openai/gpt-oss-20b',
+    'groq/compound',
+    'groq/compound-mini'
   ];
   let model = overrideConfig ? overrideConfig.model : (config.selectedModels?.[providerId as keyof typeof config.selectedModels] || 'openai/gpt-oss-120b');
   if (providerId === 'groq' && !validGroqModels.includes(model)) {
@@ -48,14 +49,16 @@ export async function generateAIResponse(
 
   // Fallback to local .env variables if API key is not found in settings
   if (!apiKey || apiKey.trim() === '') {
-    if (providerId === 'groq') apiKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.GROQ_API_KEY;
+    if (providerId === 'groq') {
+      apiKey = import.meta.env.VITE_GROQ_API_KEY || import.meta.env.VITE_GROQ_API_KEY_2 || import.meta.env.VITE_GROQ_API_KEY_3 || import.meta.env.GROQ_API_KEY;
+    }
     else if (providerId === 'google') apiKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY;
     else if (providerId === 'openai') apiKey = import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY;
   }
 
   // Groq model IDs are provider-specific and must match Groq's supported names.
-  if (providerId === 'groq' && (model === 'llama3-70b-8192' || model === 'llama3-8b-8192')) {
-    model = 'llama-3.3-70b-versatile';
+  if (providerId === 'groq' && (model === 'llama3-70b-8192' || model === 'llama3-8b-8192' || model === 'llama-3.3-70b-versatile')) {
+    model = 'openai/gpt-oss-120b';
   }
 
   if (isThinkingMode) {
@@ -91,24 +94,13 @@ export async function generateAIResponse(
     const slashResult = processSlashCommand(prompt, state);
 
     // --- 2. Classify Intent (Router) ---
-    // Bypass intent classification for strict commands or OS Agent routing
+    // RazorFlow operates in intelligent conversational fintech mode
     let mode: AIIntentMode = 'general_chat';
-    if (overrideConfig?.isOsAgent) {
-      mode = 'general_chat';
-    } else {
-      mode = slashResult.isCommand ? 'general_chat' : await classifyIntent(prompt, isPlanModeToggle, provider, { apiKey, model });
-    }
     
-    if (!slashResult.isCommand && !overrideConfig?.isOsAgent) {
-      console.log(`[AI:Router] Classified intent: ${mode}`);
-    }
-
     // --- 3. Compress Context ---
-    // If it's a command, we don't need massive workspace context unless requested. We'll pass it for now just in case.
     const compressedState = buildModeSpecificContext(state, mode);
 
     // --- 4. Build System Instruction ---
-    // Override standard conversational prompt with the strict command template
     let systemInstruction = slashResult.isCommand 
       ? slashResult.systemInstruction!
       : buildSystemInstructionForMode(state, mode, compressedState, customChatContext);
@@ -124,9 +116,8 @@ export async function generateAIResponse(
       contextWindow
     );
 
-    // Determines if the provider adapter should strictly return parsed JSON or normal text.
-    // Only mutator modes generate JSON plans. Commands NEVER generate JSON plans.
-    const requiresJson = slashResult.isCommand ? false : (mode === 'plan_create' || mode === 'plan_update');
+    // RazorFlow conversational agent returns clean, professional markdown
+    const requiresJson = false;
 
     // --- Multimodal / Retrieval Injection ---
     let finalPrompt = slashResult.isCommand ? slashResult.strippedPrompt : prompt;
@@ -173,7 +164,7 @@ export async function generateAIResponse(
     ] : [];
 
     // --- 6. Execute with Fallback ---
-    const toolList = (slashResult.isCommand || mode === 'plan_create') ? undefined : tools;
+    const toolList = slashResult.isCommand ? undefined : tools;
     
     // Extract fallback keys from .env if they exist
     const fallbackApiKeys = [];

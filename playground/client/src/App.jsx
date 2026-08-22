@@ -16,6 +16,7 @@ import { SettingsView } from './views/SettingsView';
 import { AuthView } from './views/AuthView';
 import { DownloadView } from './views/DownloadView';
 import { ManualView } from './views/ManualView';
+import { FlowGraphView } from './views/FlowGraphView';
 
 // Layout Components
 import { MainLayout } from './components/layout/MainLayout';
@@ -63,12 +64,9 @@ function App() {
   });
 
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
+    document.documentElement.classList.remove('dark', 'light', 'cream', 'mocha', 'peach', 'pistachio', 'midnight');
+    document.documentElement.classList.add(theme || 'dark');
+    localStorage.setItem('theme', theme || 'dark');
   }, [theme]);
 
   const toggleTheme = () => {
@@ -118,6 +116,9 @@ function App() {
             setUserRole={setUserRole}
           />
         );
+
+      case 'flowgraph':
+        return <FlowGraphView />;
 
       case 'investigations':
         return (

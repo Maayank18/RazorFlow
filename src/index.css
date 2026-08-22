@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @layer base {
-  :root {
+  :root, .dark {
     --bg: #0A0A0A;
     --bg-secondary: #141414;
     --panel-bg: #111111;
@@ -238,7 +238,9 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #0A0A0A;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 @keyframes glow-pulse {

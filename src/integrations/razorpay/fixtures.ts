@@ -330,3 +330,31 @@ export const MOCK_SETTLEMENTS: RazorpaySettlement[] = [
     created_at: nowSec - 18000,
   }
 ];
+
+export const MOCK_REFUNDS: RazorpayRefund[] = [
+  {
+    id: 'rfn_AutoRefund001',
+    entity: 'refund',
+    amount: 1499900, // ₹14,999.00
+    currency: 'INR',
+    payment_id: 'pay_Lz98dfHdfc001',
+    status: 'processed',
+    speed_processed: 'optimum',
+    speed_requested: 'optimum',
+    receipt: 'rcpt_rfn_001',
+    created_at: nowSec - 1200,
+  },
+  {
+    id: 'rfn_AutoRefund002',
+    entity: 'refund',
+    amount: 850000,
+    currency: 'INR',
+    payment_id: 'pay_Lz98dfHdfc002',
+    status: 'processed',
+    speed_processed: 'instant',
+    speed_requested: 'instant',
+    receipt: 'rcpt_rfn_002',
+    created_at: nowSec - 900,
+  }
+];
+

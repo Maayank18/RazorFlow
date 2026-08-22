@@ -43,6 +43,15 @@ export interface RazorFlowIntent {
     | 'engineering_incident_correlation'
     | 'action_ledger_query'
     | 'memory_consolidation'
+    | 'what_changed_query'
+    | 'context_packet_request'
+    | 'watch_metric_command'
+    | 'decision_replay_query'
+    | 'resume_investigation_query'
+    | 'flowgraph_query'
+    | 'impact_analysis_query'
+    | 'chart_generation_query'
+    | 'timeline_query'
     | 'general_command'
     | 'direct_tool_execution';
   rawQuery: string;

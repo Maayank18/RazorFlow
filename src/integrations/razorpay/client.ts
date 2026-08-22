@@ -154,7 +154,7 @@ export class RazorpayClient {
 
     if (endpoint.includes('/refund')) {
       const newRefund = {
-        id: `rfn_test_${Math.random().toString(36).slice(2, 9)}`,
+        id: `rfnd_test_${Math.random().toString(36).slice(2, 9)}`,
         entity: 'refund',
         amount: body?.amount || 1499900,
         currency: 'INR',
@@ -169,10 +169,10 @@ export class RazorpayClient {
     }
 
     if (endpoint.startsWith('/payments')) {
-      if (endpoint === '/payments') {
+      if (endpoint === '/payments' || endpoint.startsWith('/payments?')) {
         return { entity: 'collection', count: MOCK_PAYMENTS.length, items: MOCK_PAYMENTS } as unknown as T;
       }
-      const paymentId = endpoint.replace('/payments/', '').split('/')[0];
+      const paymentId = endpoint.replace('/payments/', '').split('?')[0].split('/')[0];
       const match = MOCK_PAYMENTS.find(p => p.id === paymentId);
       if (match) return match as unknown as T;
       return MOCK_PAYMENTS[0] as unknown as T;

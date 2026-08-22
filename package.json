@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.19",
+    "@types/three": "^0.185.4",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.16.0",
@@ -34,6 +35,7 @@
     "react-dom": "^19.0.1",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "three": "^0.185.1",
     "ws": "^8.21.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"

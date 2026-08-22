@@ -53,13 +53,40 @@ export class InputNormalizer {
     let requiresApproval = false;
     let confidence = 0.90;
 
-    if (/what needs my attention|how is my business|business (briefing|overview|summary)|today('s)? health|pulse|gateway.*telemetry|telemetry.*chart|show.*gateway|gateway.*health|success rate.*chart/i.test(cleaned)) {
+    if (/^\/graph|\b(show|render|view|generate)\s+(flowgraph|context graph|investigation graph|dependency graph)\b|\bflowgraph\b/i.test(cleaned)) {
+      type = 'flowgraph_query';
+      confidence = 0.99;
+    } else if (/^\/impact|\b(show|calculate|view)\s+impact\b|\bimpact of\b|\baffected (systems|services|customers|metrics)\b/i.test(cleaned)) {
+      type = 'impact_analysis_query';
+      confidence = 0.99;
+    } else if (/^\/chart|\b(render|show|plot|generate)\s+chart\b|\b(success rate|failure rate|latency|refund).*(last 7 days|trend|chart|distribution|graph)\b/i.test(cleaned)) {
+      type = 'chart_generation_query';
+      confidence = 0.98;
+    } else if (/^\/timeline|\btimeline (scrubber|view|comparison)\b/i.test(cleaned)) {
+      type = 'timeline_query';
+      confidence = 0.98;
+    } else if (/^\/compare|what changed|what has changed|compare.*baseline|temporal.*diff|delta/i.test(cleaned)) {
+      type = 'what_changed_query';
+      confidence = 0.98;
+    } else if (/^\/table|^\/summary|^\/briefing|what needs my attention|how is my business|business (briefing|overview|summary)|today('s)? health|pulse|gateway.*telemetry|telemetry.*chart|show.*gateway|gateway.*health|success rate.*chart|what payments|how many payments|payments (done|happened)|which gateway|performing worst|average payment|customers paid/i.test(cleaned)) {
       type = 'business_health_query';
       confidence = 0.98;
+    } else if (/(create|generate|export).*(handoff|packet|brief)|engineering.*packet|handoff.*packet/i.test(cleaned)) {
+      type = 'context_packet_request';
+      confidence = 0.97;
+    } else if (/watch.*(payment|success|rate|latency|metric|this)|monitor.*(payment|success|rate|latency)/i.test(cleaned)) {
+      type = 'watch_metric_command';
+      confidence = 0.96;
+    } else if (/why.*(recommend|decide|suggest|do this)|decision replay|explain.*decision/i.test(cleaned)) {
+      type = 'decision_replay_query';
+      confidence = 0.98;
+    } else if (/(continue|resume).*investigation|resume.*yesterday/i.test(cleaned)) {
+      type = 'resume_investigation_query';
+      confidence = 0.97;
     } else if (/deploy|github|commit|release|why.*after.*deploy|failure cascade|cascade diagram|architecture diagram|system diagram/i.test(cleaned)) {
       type = 'engineering_incident_correlation';
       confidence = 0.95;
-    } else if (/investigate.*payment|why.*payment.*(drop|fail|issue|spike|rate)|payment failure|refund.*(spike|unusual|increase)|investigate.*refund/i.test(cleaned)) {
+    } else if (/investigate.*payment|something.*wrong.*payment|why.*payment.*(drop|fail|issue|spike|rate)|payment failure|refund.*(spike|unusual|increase)|investigate.*refund/i.test(cleaned)) {
       type = 'payment_investigation';
       confidence = 0.96;
     } else if (/recoverable|lost revenue|where.*losing.*(money|revenue)|revenue opportunit|revenue trend|today('s)? revenue/i.test(cleaned)) {

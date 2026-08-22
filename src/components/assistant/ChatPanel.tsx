@@ -15,6 +15,7 @@ import { MarkdownRenderer } from '../MarkdownRenderer';
 import { inputNormalizer } from '../../agent/intent/normalizer';
 import { contextEngine } from '../../agent/context/engine';
 import { agentOrchestrator } from '../../agents/specialized';
+import { orbIntelligenceEngine } from '../../agent/orb/orbIntelligenceEngine';
 import { OrbVisualArtifact } from './OrbVisualArtifact';
 
 import { ExplainabilityService } from '../../lib/explainability';
@@ -78,31 +79,24 @@ export function ChatPanel({
   }, [isMenuOpen]);
 
   const [orbRole, setOrbRole] = useState<'merchant' | 'engineer'>('merchant');
+  const [analyzingStatus, setAnalyzingStatus] = useState<string | null>(null);
 
   const executePromptWithPipeline = async (promptText: string) => {
     setIsTyping(true);
+    setAnalyzingStatus('Analyzing live transaction streams & telemetry...');
     try {
-      // 1. Check canonical fintech intent first
-      const rzpIntent = inputNormalizer.normalize({ text: promptText });
-      if (rzpIntent.type !== 'general_command' && rzpIntent.confidence >= 0.6) {
-        const context = contextEngine.assembleContext(rzpIntent, {}, orbRole);
-        const orchestratorResult = await agentOrchestrator.orchestrate(rzpIntent, context);
-        
-        let artifactType: any = undefined;
-        if (rzpIntent.type === 'business_health_query') {
-          artifactType = 'gateway_matrix';
-        } else if (rzpIntent.type === 'payment_investigation' || rzpIntent.type === 'engineering_incident_correlation') {
-          artifactType = 'failure_cascade';
-        } else if (rzpIntent.type === 'revenue_opportunity_query' || rzpIntent.type === 'recovery_action') {
-          artifactType = 'revenue_recovery';
-        }
+      // Natural thinking delay for authentic intelligence feel
+      await new Promise(r => setTimeout(r, 700));
 
+      // 1. Process via Orb Intelligence Engine 2.0
+      const orbRes = await orbIntelligenceEngine.processQuery(promptText, orbRole);
+      if (orbRes.confidence >= 0.7) {
         const aiMsg: Message = {
           id: generateId(),
           role: 'assistant',
-          content: orchestratorResult.reasoning.conclusion,
+          content: orbRes.answerText,
           timestamp: Date.now(),
-          artifactType
+          artifactType: orbRes.artifactType,
         } as any;
 
         setState((prev: AppState) => ({
@@ -110,6 +104,20 @@ export function ChatPanel({
           messages: [...prev.messages, aiMsg]
         }));
         setIsTyping(false);
+        setAnalyzingStatus(null);
+
+        // Vocal Speech Synthesis with TTS Safety
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+          try {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(orbRes.spokenText);
+            utterance.rate = 1.02;
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+          } catch {
+            // Ignore speech synthesis errors gracefully
+          }
+        }
         return;
       }
 
@@ -123,6 +131,7 @@ export function ChatPanel({
           messages: [...prev.messages, aiMsg]
         }));
         setIsTyping(false);
+        setAnalyzingStatus(null);
         return;
       }
 
@@ -139,11 +148,13 @@ export function ChatPanel({
         } catch(e) {}
       }
 
-      // Check if visualization is requested
+      // Check if visualization or informatics is requested
       let artifactType: any = undefined;
       const lowerPrompt = promptText.toLowerCase();
-      if (/gateway|telemetry|chart|success rate/i.test(lowerPrompt)) {
+      if (/gateway|telemetry|chart|success rate|informatics|infographic|visual/i.test(lowerPrompt)) {
         artifactType = 'gateway_matrix';
+      } else if (/reward|points|savings|fee|security|radar|safe/i.test(lowerPrompt)) {
+        artifactType = 'merchant_rewards';
       } else if (/cascade|diagram|architecture|sre/i.test(lowerPrompt)) {
         artifactType = 'failure_cascade';
       } else if (/recover|soft decline|revenue opportunity/i.test(lowerPrompt)) {
@@ -163,9 +174,11 @@ export function ChatPanel({
         messages: [...prev.messages, aiMsg]
       }));
       setIsTyping(false);
+      setAnalyzingStatus(null);
     } catch (err: any) {
       console.error('Agent execution error:', err);
       setIsTyping(false);
+      setAnalyzingStatus(null);
     }
   };
 
@@ -341,33 +354,16 @@ export function ChatPanel({
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-      {/* Clean Compact Mode Switcher */}
+      {/* Clean Merchant Co-Pilot Status Banner */}
       {!viewingSessionId && (
-        <div className="shrink-0 px-3 py-1.5 border-b border-card-border/60 bg-bg-secondary/40 flex items-center justify-center">
-          <div className="flex items-center bg-bg/80 p-0.5 rounded-lg border border-card-border/60 text-[10px]">
-            <button
-              type="button"
-              onClick={() => setOrbRole('merchant')}
-              className={`px-3 py-0.5 rounded-md font-medium transition-all cursor-pointer ${
-                orbRole === 'merchant'
-                  ? 'bg-[#0C83FD] text-white shadow-sm font-bold'
-                  : 'text-text-muted hover:text-white'
-              }`}
-            >
-              Merchant
-            </button>
-            <button
-              type="button"
-              onClick={() => setOrbRole('engineer')}
-              className={`px-3 py-0.5 rounded-md font-medium transition-all cursor-pointer ${
-                orbRole === 'engineer'
-                  ? 'bg-purple-600 text-white shadow-sm font-bold'
-                  : 'text-text-muted hover:text-white'
-              }`}
-            >
-              Developer
-            </button>
+        <div className="shrink-0 px-3.5 py-2 border-b border-card-border/60 bg-bg-secondary/40 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-semibold text-text-primary">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[11px] font-bold text-white tracking-wide">RazorFlow Merchant Co-Pilot</span>
           </div>
+          <span className="text-[9px] font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+            ● Live Connected
+          </span>
         </div>
       )}
 
@@ -506,10 +502,11 @@ export function ChatPanel({
         ))}
 
         {isTyping && (
-          <div className="flex gap-3">
-            <div className="w-7 h-7 rounded-full bg-card border border-card-border flex items-center justify-center shrink-0">
-              <Loader2 className="w-3.5 h-3.5 text-accent animate-spin" />
-            </div>
+          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-panel/80 border border-card-border/60 text-xs text-text-muted animate-pulse">
+            <Loader2 className="w-4 h-4 text-[#0C83FD] animate-spin shrink-0" />
+            <span className="text-[11px] font-medium text-text-primary">
+              {analyzingStatus || 'Flow is analyzing transaction telemetry...'}
+            </span>
           </div>
         )}
       </div>
@@ -691,13 +688,16 @@ export function ChatPanel({
                   RazorFlow Operational Commands
                 </div>
                 {[
-                  { cmd: '/briefing', desc: 'Deliver prioritized daily business health briefing', query: 'Flow, tell me what needs my attention today.' },
-                  { cmd: '/gateways', desc: 'Display live payment gateway telemetry and charts', query: 'Flow, show payment gateway telemetry chart.' },
-                  { cmd: '/investigate', desc: 'Deep root-cause failure investigation with diagnostic match', query: 'Flow, investigate the payment drop.' },
-                  { cmd: '/revenue', desc: 'Scan recoverable revenue & draft 1-click retry links', query: 'Where am I losing potential revenue?' },
-                  { cmd: '/cascade', desc: 'Generate SRE failure cascade & CI/CD commit correlation diagram', query: 'Flow, why did payment failures increase after the latest deployment?' },
-                  { cmd: '/ledger', desc: 'Query immutable Action Ledger audit trail playback', query: 'What did RazorFlow do?' },
-                  { cmd: '/memory', desc: 'Consolidate operational incident into long-term memory', query: 'Flow, remember this incident in operational memory.' },
+                  { cmd: '/investigate', desc: 'Deep root-cause payment failure investigation', query: 'Flow, investigate the payment drop.' },
+                  { cmd: '/graph', desc: 'Render interactive FlowGraph of Context & Investigation topology', query: 'Flow, show the FlowGraph.' },
+                  { cmd: '/impact', desc: 'Calculate upstream and downstream operational & revenue impact', query: 'Flow, show impact of HDFC Netbanking failure.' },
+                  { cmd: '/chart', desc: 'Generate deterministic natural-language charts & telemetry trends', query: 'Flow, show chart of payment success rate over the last 7 days.' },
+                  { cmd: '/timeline', desc: 'Scrubber comparing baseline vs active operational states', query: 'Flow, show timeline comparison.' },
+                  { cmd: '/compare', desc: 'Compare temporal baseline operational delta (What Changed?)', query: 'Flow, what changed?' },
+                  { cmd: '/table', desc: 'Display live payment gateway telemetry matrix', query: 'Flow, show payment gateway telemetry chart.' },
+                  { cmd: '/summary', desc: 'Deliver prioritized daily business health briefing', query: 'Flow, tell me what needs my attention today.' },
+                  { cmd: '/evidence', desc: 'Replay evidence-backed decision metadata (Why?)', query: 'Flow, why did RazorFlow recommend this?' },
+                  { cmd: '/export', desc: 'Generate engineering investigation context packet (Slack/GitHub/Markdown)', query: 'Flow, create an engineering investigation packet.' },
                 ]
                   .filter(c => c.cmd.toLowerCase().includes(input.toLowerCase().trim()))
                   .map(c => (
